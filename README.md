@@ -195,6 +195,8 @@ There are however two caveats that must be considered. Both will be addressed in
 
 ## DNS integration
 
+> This paragraph summarizes the key aspects of DNS resolution for PaaS services that support Private Link. Additional details are available [here](https://github.com/dmauser/PrivateLink/tree/master/DNS-Integration-Scenarios). 
+
 Each instance of an Azure public service is assigned, at provisioning time, a unique, publicly resolvable FQDN. When a service has a shared architecture, multiple instances run on the same set of resources and share the same IP address. Azure relies on CNAME records to map the FQDNs of different instances to the same IP address, as shown in Figure 13.
 
 ![Figure 13 - NOT DISPLAYED](/Figures/figure13.png)
