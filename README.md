@@ -23,7 +23,9 @@ Whether a service has a dedicated or a shared architecture is in most cases dict
 
 ## VNet integration patterns for dedicated services
 
-Azure Cache for Redis is an example of a dedicated PaaS service. Its high-level architecture is shown in Figure 1 below. When a user provisions an instance of the service, specific resources are allocated to that instance. Instances belonging to other customers use different sets of resources[^1].
+Azure Cache for Redis is an example of a dedicated PaaS service. Its high-level architecture is shown in Figure 1 below. When a user provisions an instance of the service, specific resources are allocated to that instance. Instances belonging to other customers use different sets of resources.
+
+> Please note that resources in a pool may be virtualized. Therefore, services with a dedicated architecture do not necessarily assign dedicated *hardware* resources to individual instances.
 
 ![Figure 1 - NOT DISPLAYED](/Figures/figure1.png)
 *Figure 1. Azure Cache for Redis has a dedicated architecture. Each instance runs on a dedicated set of resources.*
@@ -83,14 +85,19 @@ Because of the requirements and constraints listed in the previous section, defi
 * Define NSG rules that do not require any updates when the set of IP addresses assigned to a service’s management layer or dependencies changes.
 
 ![Figure 5 - NOT DISPLAYED](/Figures/figure5.png)
+
 *Figure 5. Service tags can be used to reference sets of IP addresses associated to a service’s control plane when defining NSG rules for the subnets that host VNet-injected services (screenshot from Azure management portal).*
 
 # VNet Service Endpoints
 
-VNet service endpoints are a VNet integration pattern that can be applied to select[^2] Azure PaaS services with a *shared architecture* to make them accessible only from authorized VNet/subnets. More specifically:
+VNet service endpoints are a VNet integration pattern that can be applied to select Azure PaaS services with a *shared architecture* to make them accessible only from authorized VNet/subnets. More specifically:
 
 * Each *instance* of a PaaS service that supports VNet service endpoints can be configured to accept connections that originate from select subnets in select VNets only. This configuration is applied to the service-side. It should be noted that VNet service endpoints do not prevent internet clients from connecting to a service’s public endpoint; however, all services that support VNet service endpoints also provide a firewalling feature that allows blocking all connections from the internet (or accepting connections only from known, trusted public IPs);
-* In each subnet, service endpoints can be enabled for select service types[^3]. For example, a subnet can be configured with service endpoints for Azure SQL DB and Azure Storage. This configuration is applied to the client (VNet) side.
+* In each subnet, service endpoints can be enabled for select service types. For example, a subnet can be configured with service endpoints for Azure SQL DB and Azure Storage. This configuration is applied to the client (VNet) side.
+
+> For the latest information about Azure services that support VNet service endpoints, please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoints-overview). 
+
+> From the perspective of clients in a VNet, service endpoints provide access to a whole service, rather than select instances.
 
 Figure 6 below shows a VNet service endpoint configuration example. UserA’s storage account has been configured to only accept connections from clients in Subnet1 of UserA’s VNet (Figure 6.a) and from clients connecting from the public IP address 5.5.5.5 (Figure 6.b). All other connections are rejected, including connections from clients in other subnets (Figure 6.c) and other public IP addresses (Figure 6.d).
 
@@ -128,7 +135,9 @@ VNet service endpoint policies are available only for Azure Storage and only in 
 
 # Private Link
 
-Private Link is the “V2” integration pattern for services with a *shared architecture*. It addresses the limitations of VNet service endpoints by exposing select PaaS services[^4] with a *shared architecture* via private IP addresses belonging to a user VNet’s address space. Private Link, in itself, does not prevent internet clients from accessing the service through its public endpoint. However, all services that support Private Link provide a firewall feature that can be configured to block all connections from the internet (or to only accept connections from known, trusted public IPs). This feature, combined with Private Link, enables users to make their PaaS service instance completely private, i.e. exclusively accessible from authorized VNets over private IP addresses belonging to the VNets’ address spaces.
+Private Link is the “V2” integration pattern for services with a *shared architecture*. It addresses the limitations of VNet service endpoints by exposing select PaaS services with a *shared architecture* via private IP addresses belonging to a user VNet’s address space. Private Link, in itself, does not prevent internet clients from accessing the service through its public endpoint. However, all services that support Private Link provide a firewall feature that can be configured to block all connections from the internet (or to only accept connections from known, trusted public IPs). This feature, combined with Private Link, enables users to make their PaaS service instance completely private, i.e. exclusively accessible from authorized VNets over private IP addresses belonging to the VNets’ address spaces.
+
+> Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/private-link/) for up-to-date information about the services that support Private Link.
 
 ![Figure 9 - NOT DISPLAYED](/Figures/figure9.png)
 *Figure 9. Private Link is a technology that allows clients in a VNet to consume PaaS services through “private endpoints” with IP addresses belonging to the VNet’s address space. In this example, a VM in User A’s VNet with private IP address 10.57.0.15 accesses User A’s storage account through the private address 10.57.1.5, which belongs to User A VNet’s address space.*
@@ -196,7 +205,9 @@ It should be noted that clients **must** reference the FQDN of the instance they
 Private Link introduces further complexity in DNS resolution. In the most general scenario, an instance of a service that supports Private Link may be accessed through its “native” public IP *and* through private endpoints in *multiple* VNets at the same time. In both cases (access through public or private endpoint) the FQDN used by clients must remain the same (as explained above); but it must be resolved to different IP addresses, depending on the endpoint (public vs. private) being accessed. More specifically:
 
 * Clients outside VNets (and not connected to VNets with private endpoints through site-to-site VPNs or Expressroute private peering) must resolve the FQDN of the instance they want to access to the service’s public IP address;
-* Clients deployed in VNets with a private endpoint must resolve the same FQDN to the IP address assigned to the private endpoint in *their own* VNet. In other words, DNS resolution for service instances exposed over private endpoints must be customized in each VNet[^5].
+* Clients deployed in VNets with a private endpoint must resolve the same FQDN to the IP address assigned to the private endpoint in *their own* VNet. In other words, DNS resolution for service instances exposed over private endpoints must be customized in each VNet.
+
+> It should be noted that Private Link introduces requirements that cannot be addressed by simply running a “split horizon” DNS service. In fact, Private Link requires DNS resolution to change not only based on the client’s location (for example, inside vs. outside an Azure VNet) but also based on whether or not private endpoints have been defined for any given instance.
 
 Microsoft Azure allows users to customize name resolution for service instances associated to private endpoints by adding one more level of indirection in the mapping between instance FQDNs and IP addresses, as detailed below.
 
@@ -207,7 +218,9 @@ Microsoft Azure allows users to customize name resolution for service instances 
 ![Figure 14 - NOT DISPLAYED](/Figures/figure14.png)
 *Figure 14. Name resolution for internet clients for the example storage account “usera.blob.core.windows.net”. The additional level of indirection (name “usera.blob.core.windows.net” mapped to “usera.privatelink.blob.core.windows.net”) is transparent to the client.*
 
-VNet owners can map names in the “privatelink” zone to the IP addresses of the corresponding private endpoints in their VNets by means of a custom “privatelink” child zone. The custom zone can be deployed as an [Azure DNS private zone](https://docs.microsoft.com/en-us/azure/dns/private-dns-overview) linked to the VNet, or by means of custom DNS servers[^6]. Name resolution for clients within VNets with private endpoints works as shown in Figure 15 below.
+VNet owners can map names in the “privatelink” zone to the IP addresses of the corresponding private endpoints in their VNets by means of a custom “privatelink” child zone. The custom zone can be deployed as an [Azure DNS private zone](https://docs.microsoft.com/en-us/azure/dns/private-dns-overview) linked to the VNet, or by means of custom DNS servers. Name resolution for clients within VNets with private endpoints works as shown in Figure 15 below.
+
+> When using custom authoritative DNS servers, they **must** be configured to forward queries for names outside the privatelink zones to the Azure-provided DNS service (168.63.129.16) or to other servers that can resolve names against the public DNS service. This is needed in order for the custom DNS servers to discover whether private endpoints have been defined for a service instance (if yes, the instance FQDN is mapped to a “privatelink” name via a CNAME record; if not, the instance FQDN is mapped via a CNAME record to the canonical name of the service’s public IP address). 
 
 ![Figure 15 - NOT DISPLAYED](/Figures/figure15.png)
 
@@ -225,16 +238,3 @@ In hybrid scenarios where on-prem clients consume private endpoints over site-to
 If Azure DNS is used for “privatelink” zones in Azure VNets, additional DNS servers (authoritative for the “privatelink” zones) must be deployed to support resolution for on-prem clients (Azure DNS cannot be used by on-prem clients). This option requires manual management of the “privatelink” zones on the on-prem DNS servers, and care must be taken to keep the zone file(s) aligned with Azure DNS’s.
 
 If custom DNS servers authoritative for the “privatelink” zones are deployed in Azure VNets (i.e. Azure DNS private zones are not used) on-prem DNS servers should be configured to forward queries for names in the “privatelink” zones to those DNS servers. It is also possible to deploy multiple authoritative DNS servers for the privatelink zones both on-prem and in Azure VNet and use zone transfers to keep them in sync.
-
-------
-# Notes
-[^1]: Please note that resources in a pool may be virtualized. Therefore, services with a dedicated architecture do not necessarily assign dedicated *hardware* resources to individual instances.
-[^2]: For the latest information about Azure services that support VNet service endpoints, please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoints-overview). 
-
-[^3]: From the perspective of clients in a VNet, service endpoints provide access to a whole service, rather than select instances.
-
-[^4]: Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/private-link/) for up-to-date information about the services that support Private Link.
-
-[^5]: It should be noted that Private Link introduces requirements that cannot be addressed by simply running a “split horizon” DNS service. In fact, Private Link requires DNS resolution to change not only based on the client’s location (for example, inside vs. outside an Azure VNet) but also based on whether or not private endpoints have been defined for any given instance.
-
-[^6]: When using custom authoritative DNS servers, they **must** be configured to forward queries for names outside the privatelink zones to the Azure-provided DNS service (168.63.129.16) or to other servers that can resolve names against the public DNS service. This is needed in order for the custom DNS servers to discover whether private endpoints have been defined for a service instance (if yes, the instance FQDN is mapped to a “privatelink” name via a CNAME record; if not, the instance FQDN is mapped via a CNAME record to the canonical name of the service’s public IP address). 
