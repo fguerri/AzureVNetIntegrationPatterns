@@ -30,7 +30,7 @@ Azure Cache for Redis is an example of a dedicated PaaS service. Its high-level 
 ![Figure 1 - NOT DISPLAYED](/Figures/figure1.png)
 *Figure 1. Azure Cache for Redis has a dedicated architecture. Each instance runs on a dedicated set of resources.*
 
-Azure PaaS services with a dedicated architecture can be made private by deploying the resources dedicated to an instance into a VNet belonging to the owner of that instance. This integration pattern is referred to as **VNet injection**. It is described in the section [VNet injection](#VNet injection).
+Azure PaaS services with a dedicated architecture can be made private by deploying the resources dedicated to an instance into a VNet belonging to the owner of that instance. This integration pattern is referred to as **VNet injection**. It is described in the section titled "VNet injection".
 
 ## VNet integration patterns for shared services
 
@@ -39,7 +39,7 @@ Azure Storage is an example of a shared service. Its high-level architecture is 
 ![Figure 2 - NOT DISPLAYED](/Figures/figure2.png)
 *Figure 2. Azure Storage has a shared architecture. Multiple instances belonging to different users share the same compute, storage and network resources.*
 
-Shared services cannot be deployed into any user’s VNet because they run on resources that must be accessible by multiple users. Just like a public web site that must be available to users connecting from multiple private networks (such as their home network or their company’s network), the resources allocated to a shared service instance must be exposed on public, internet-routable IP addresses owned by the service provider. Therefore, VNet injection (introduced in the previous section specific to *dedicated services*) is not a viable integration pattern for shared services. For shared services, two alternative patterns are available: **VNet Service Endpoints** and **Private Link**. These integration patterns are described in the sections [VNet service endpoints](#VNet service endpoints) and [Private Link](#Private Link).
+Shared services cannot be deployed into any user’s VNet because they run on resources that must be accessible by multiple users. Just like a public web site that must be available to users connecting from multiple private networks (such as their home network or their company’s network), the resources allocated to a shared service instance must be exposed on public, internet-routable IP addresses owned by the service provider. Therefore, VNet injection (introduced in the previous section specific to *dedicated services*) is not a viable integration pattern for shared services. For shared services, two alternative patterns are available: **VNet Service Endpoints** and **Private Link**. These integration patterns are described in sections "VNet service endpoints" and "Private Link", respectively.
 
 # VNet injection
 
