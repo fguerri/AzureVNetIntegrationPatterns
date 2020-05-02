@@ -1,3 +1,23 @@
+# Table of contents
+
+## [Introduction](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#introduction)
+## [PaaS architectures and VNet integration patterns](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#paas-architectures-and-vnet-integration-patterns)
+#### [VNet integration patterns for dedicated services](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#vnet-integration-patterns-for-dedicated-services)
+#### [VNet integration patterns for shared services](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#vnet-integration-patterns-for-shared-services)
+## [VNet injection](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#vnet-injection)
+#### [Implications of VNet injection on network security groups and route tables](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#implications-of-vnet-injection-on-network-security-groups-and-route-tables)
+#### [Service tags](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#service-tags)
+## [VNet service endpoints](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#vnet-service-endpoints)
+#### [Implications of VNet service endpoints on network security groups and route tables](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#implications-of-vnet-service-endpoints-on-network-security-groups-and-route-tables)
+#### [VNet service endpoint policies](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#vnet-service-endpoint-policies)
+## [Private Link](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#private-link)
+#### [Private Endpoints](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#private-endpoints)
+#### [Private Link Services](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#private-link-services)
+#### [Implications of private link on network security groups and route tables](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#implications-of-private-link-on-network-security-groups-and-route-tables)
+#### [DNS integration](https://github.com/fguerri/AzureVNetIntegrationPatterns/blob/master/README.md#dns-integration)
+
+---
+
 # Introduction
 
 Microsoft Azure services can be classified, according to their network-level behavior, as either a public service or a private service.
