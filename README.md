@@ -26,7 +26,7 @@ Microsoft Azure services can be classified, according to their network-level beh
 
 **Azure public services** are not deployed into any VNet. They are directly accessible from the internet, over public IP addresses owned by Microsoft and assigned to service instances at provisioning time. Public services can be consumed by any client with an internet connection (provided that the client possesses the required credentials).  Most Azure PaaS services are public, examples of which include Azure SQL Database, Azure Storage and Azure Cosmos DB. 
 
-PaaS services democratized access to advanced IT capabilities that, with more traditional computing paradigms, would be affordable only for very large organizations with enough resources (financial and technical) to acquire and manage the underlying infrastructure. However, the public nature of most PaaS services has soon emerged as a blocker to their adoption in many security-sensitive scenarios.  Microsoft Azure supports three **VNet integration patterns** to make PaaS services only accessible from clients deployed within Azure VNets and not accessible from the internet. Multiple patterns are required because of the architectural differences that exist among different public PaaS services. 
+PaaS services democratized access to advanced IT capabilities that, with more traditional computing paradigms, would be affordable only for very large organizations with enough resources (financial and technical) to acquire and manage the underlying infrastructure. However, the public nature of some PaaS services emerged as a challenge to their adoption in many security-sensitive scenarios.  Microsoft Azure supports three **VNet integration patterns** to make PaaS services only accessible from clients deployed within Azure VNets and not accessible from the internet. Multiple patterns are required because of the architectural differences that exist among different public PaaS services. 
 
 This article describes the three VNet integration patterns currently available on the platform (VNet injection, VNet service endpoints and Private Link) and the relationship between the architecture of a PaaS service and the integration pattern(s) that can be applied to it.
 
@@ -59,7 +59,7 @@ Azure Storage is an example of a shared service. Its high-level architecture is 
 ![Figure 2 - NOT DISPLAYED](/Figures/figure2.png)
 *Figure 2. Azure Storage has a shared architecture. Multiple instances belonging to different users share the same compute, storage and network resources.*
 
-Shared services cannot be deployed into any user’s VNet because they run on resources that must be accessible by multiple users. Just like a public web site that must be available to users connecting from multiple private networks (such as their home network or their company’s network), the resources allocated to a shared service instance must be exposed on public, internet-routable IP addresses owned by the service provider. Therefore, VNet injection (introduced in the previous section specific to *dedicated services*) is not a viable integration pattern for shared services. For shared services, two alternative patterns are available: **VNet Service Endpoints** and **Private Link**. These integration patterns are described in sections "VNet service endpoints" and "Private Link", respectively.
+Shared services cannot be deployed into a specific user's VNet because they run on resources that must be accessible by multiple users. Just like a public web site that must be available to users connecting from multiple private networks (such as their home network or their company’s network), the resources allocated to a shared service instance must be exposed on public, internet-routable IP addresses owned by the service provider. Therefore, VNet injection (introduced in the previous section specific to *dedicated services*) is not a viable integration pattern for shared services. For shared services, two alternative patterns are available: **VNet Service Endpoints** and **Private Link**. These integration patterns are described in sections "VNet service endpoints" and "Private Link", respectively.
 
 # VNet injection
 
@@ -68,7 +68,7 @@ VNet injection is the VNet integration pattern for services whose architecture i
 ![Figure 3 - NOT DISPLAYED](/Figures/figure3.png)
 *Figure 3. VNet injection for dedicated services (Azure Cache for Redis is used as an example). Resources allocated to a service instance can be deployed to a VNet belonging to the instance’s owner and therefore can be exposed on private IP addresses in the VNet’s address space.*
 
-* VNet-injected services are usually deployed to a dedicated subnet that cannot contain any other services (such as Virtual Machines) deployed by the user. The minimum number of required IP addresses in the subnet depends on the service. Please refer to the official documentation of each specific service for details.
+* VNet-injected services are usually deployed to a dedicated subnet that cannot contain any other services (such as Virtual Machines) deployed by the user. This is referred to in Azure documentation as [subnet delegation](https://docs.microsoft.com/en-us/azure/virtual-network/subnet-delegation-overview), each VNet-injected service requires its own delegated subnet. The minimum number of required IP addresses in the subnet depends on the service. Please refer to the official documentation of each specific service for details.
 * VNet-injected services are exposed over IP addresses that belong to the VNet’s address space. Therefore, at the network layer, these services behave just like Virtual Machines. More specifically, they can 
 	* Initiate connections to, and receive connections from, Virtual Machines in the same VNet (or in other VNets connected to it via VNet peering or VNet-2-VNet IPSec tunnels);
 	* Initiate connections to, and receive connections from, on-prem hosts over VPN tunnels or Expressroute;
@@ -81,7 +81,7 @@ Please note that a specific service might not leverage all the capabilities list
 
 The control plane of dedicated services does *not* have a dedicated architecture itself. It manages multiple resources allocated to different instances and users. Therefore, it cannot be injected in any VNets and must rely on endpoints with public IP addresses to interact with the VNet-injected resources it manages. As a result, VNet-injected resources must be able to (see Figure 3 above):
 
-* Initiate outbound connections to public IP addresses associated to control plane endpoints, for example to send notifications to the management layer or to download configuration updates from a storage facility, such as Azure SQL DB or an Azure Storage account; 
+* Initiate outbound connections to public IP addresses associated to control plane endpoints, for example to send notifications to the management layer or to download configuration updates from a storage facility, such as an Azure SQL Database or an Azure Storage account; 
 * Receive inbound connections from public IP addresses associated to their control plane, for example to be notified about events in their lifecycle (provision, deprovision, apply configuration, etc.).
 
 This is shown in Figure 4 below.
@@ -112,12 +112,12 @@ Because of the requirements and constraints listed in the previous section, defi
 
 VNet service endpoints are a VNet integration pattern that can be applied to select Azure PaaS services with a *shared architecture* to make them accessible only from authorized VNet/subnets. More specifically:
 
-* Each *instance* of a PaaS service that supports VNet service endpoints can be configured to accept connections that originate from select subnets in select VNets only. This configuration is applied to the service-side. It should be noted that VNet service endpoints do not prevent internet clients from connecting to a service’s public endpoint; however, all services that support VNet service endpoints also provide a firewalling feature that allows blocking all connections from the internet (or accepting connections only from known, trusted public IPs);
-* In each subnet, service endpoints can be enabled for select service types. For example, a subnet can be configured with service endpoints for Azure SQL DB and Azure Storage. This configuration is applied to the client (VNet) side.
+* Each *instance* of a PaaS service that supports VNet service endpoints can be configured to accept connections that originate from select subnets in select VNets only. This configuration is applied within the security section of the PaaS service. It should be noted that VNet service endpoints do not prevent internet clients from attempting to connect to a service’s public endpoint; however, all services that support VNet service endpoints also provide a firewalling feature that allows blocking all connections from the internet (or accepting connections only from known, trusted public IPs);
+* In each subnet, service endpoints can be enabled for select service types. For example, a subnet can be configured with service endpoints for Azure SQL Database and Azure Storage. This configuration is applied to the client (VNet) side.
 
 > For the latest information about Azure services that support VNet service endpoints, please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoints-overview). 
 
-> From the perspective of clients in a VNet, service endpoints provide access to a whole service, rather than select instances.
+> From the perspective of clients in a VNet, service endpoints provide access to the entire PaaS service, rather than select instances of that PaaS service.
 
 Figure 6 below shows a VNet service endpoint configuration example. UserA’s storage account has been configured to only accept connections from clients in Subnet1 of UserA’s VNet (Figure 6.a) and from clients connecting from the public IP address 5.5.5.5 (Figure 6.b). All other connections are rejected, including connections from clients in other subnets (Figure 6.c) and other public IP addresses (Figure 6.d).
 
@@ -134,7 +134,7 @@ Two constraints must be considered when working with VNet service endpoints:
 From the perspective of a client deployed in an Azure VNet, configuring a VNet service endpoint for a PaaS service does not change the service’s *public* IP addresses. However, the Azure networking stack facilitates connections to those public IP addresses in such a way that the service can verify whether they originate from authorized subnets. This is done in the following way:
 
 * When a service endpoint is configured in a subnet for a service type in a region, routes for all the public prefixes used by that service type in that region are added to the subnet’s route table, with next hop type set to the special value “VirtualNetworkServiceEndpoint” (see Figure 7 below);
-* All the IP packets that match one of the routes with next hop type “VNet service endpoint” are encapsulated, by the Azure network virtualization stack, in outer packets that carry information about the identity of their source VNet/subnet; 
+* All the IP packets that match one of the routes with next hop type “VNet service endpoint” are encapsulated, by the Azure network, in outer packets that carry information about the identity of their source VNet/subnet; 
 * The routes with next hop type “VirtualNetworkServiceEndpoint” are managed by the platform and cannot be overridden by user-defined routes. 
 
 ![Figure 7 - NOT DISPLAYED](/Figures/figure7.png)
@@ -153,9 +153,11 @@ When VNet service endpoints for a specific service type are enabled for a subnet
 
 VNet service endpoint policies are available only for Azure Storage and only in specific regions. Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoint-policies-overview) for the most up-to-date information. 
 
+> Please note that the use of Service Endpoint Policies for Azure Storage provides the additional benefit of supporting the connectivity between PaaS service instances and the authorized VNet(s) across subscription in different Azure Active Directory (AAD) tenants. Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoint-policies-overview#configuration) for additional details
+
 # Private Link
 
-Private Link is the “V2” integration pattern for services with a *shared architecture*. It addresses the limitations of VNet service endpoints by exposing select PaaS services with a *shared architecture* via private IP addresses belonging to a user VNet’s address space. Private Link, in itself, does not prevent internet clients from accessing the service through its public endpoint. However, all services that support Private Link provide a firewall feature that can be configured to block all connections from the internet (or to only accept connections from known, trusted public IPs). This feature, combined with Private Link, enables users to make their PaaS service instance completely private, i.e. exclusively accessible from authorized VNets over private IP addresses belonging to the VNets’ address spaces.
+Private Link is the latest integration pattern for services with a *shared architecture*. It addresses the limitations of VNet service endpoints by exposing select PaaS services with a *shared architecture* via private IP addresses belonging to a user VNet’s address space. Private Link, in itself, does not prevent internet clients from accessing the service through its public endpoint. However, all services that support Private Link provide a firewall feature that can be configured to block all connections from the internet (or to only accept connections from known, trusted public IPs). This feature, combined with Private Link, enables users to make their PaaS service instance completely private, i.e. exclusively accessible from authorized VNets over private IP addresses belonging to the VNets’ address spaces.
 
 > Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/private-link/) for up-to-date information about the services that support Private Link.
 
@@ -168,7 +170,7 @@ The key advantages offered by Private Link over VNet service endpoints are the f
 * Private Link makes it possible for on-premises clients connected via Expressroute private peering or VPN to consume PaaS service instances via a private IP address;
 * Private Link allows VNet owners to expose select service instances, as opposed to all instances of a service type in a region, to the VNet, thus addressing by design the data exfiltration issue (see paragraph “VNet service endpoint policies”);
 * Private Link does not introduce any limitations about the location of the PaaS service instance and the VNet(s) where it is exposed (i.e. PaaS instances and VNets can be in different Azure regions or geographies);
-* Private Link can be used to privately expose to a VNet not only first-party PaaS services, but also 3rd party services running on Azure.
+* Private Link can be used to privately expose to a VNet not only first-party Microsoft PaaS services, but also 3rd party services running on Azure.
 
 Private Link is a platform-wide functionality, but each PaaS service to which it is applicable must be onboarded. Therefore, while Private Link does provide a more effective approach to securing PaaS services than VNet service endpoints, the two integration patterns are expected to coexist in the short and medium term. 
 
@@ -183,14 +185,14 @@ They are covered in the following paragraphs.
 
 To expose a public service instance (such as an Azure storage account or an Azure SQL Database) in a VNet with Private Link, a **private endpoint** resource (of type `Microsoft.Network/PrivateEndpoints`) must be provisioned. A private endpoint resource represents a logical relationship between the public service instance and a NIC attached to the VNet where the service is exposed. The NIC resource is automatically created when the private endpoint is provisioned. Just like any other NIC, the NIC associated to a private endpoint gets an IP address in the address range of the subnet it is attached to. That address becomes the address of the service instance for clients in the VNet (or in remote networks connected via VPN or Expressroute private peering). 
 
-The same public service instance can be referenced by multiple private endpoints in different VNets/subnets, even if they belong to different users/subscriptions or if they have overlapping address spaces, as shown in Figure 10.
+The same public service instance can be referenced by multiple private endpoints in different VNets/subnets, even if they belong to different users/subscriptions (including within differing Azure Active Directory (AAD) tenants)  or if they have overlapping address spaces, as shown in Figure 10.
 
 ![Figure 10  - NOT DISPLAYED](/Figures/figure10.png)
-*Figure 10. Multiple users can define service endpoints in their VNet. Each user can only consume their own instances via the private endpoint.*
+*Figure 10. Multiple users can define private endpoints in their VNet. Each user can only consume their own instances via the private endpoint.*
 
 ## Private Link Services
 
-Private Link can also supports exposing 3rd party services deployed on the platform through private endpoints. A 3rd party service exposed with Private Link is referred to as a **private link service**. Any custom service running in a VNet behind a Standard SKU Azure Internal Load Balancer (ILB) can be exposed through a private endpoint in another VNet. The custom service and the VNet can reside in different regions and belong to different subscriptions that trust different Azure Active Directory tenants. 
+Private Link also supports exposing 3rd party services deployed on the platform through private endpoints. A 3rd party service exposed with Private Link is referred to as a **private link service**. Any custom service running in a VNet behind a Standard SKU Azure Internal Load Balancer (ILB) can be exposed through a private endpoint in another VNet. The custom service and the VNet can reside in different regions and belong to different subscriptions that trust different Azure Active Directory tenants. 
 
 To create a private link service, a resource of type `Microsoft.Network/PrivateLinkServices` must be provisioned. It represents a logical relationship between the Azure ILB that exposes the 3rd party service and a NIC attached to the same VNet as the ILB. The NIC resource (of type `Microsoft.Network/networkInterfaces`) is automatically created as part of the private link service provisioning process. From the service’s perspective, client connections originate from this NIC.
 
@@ -199,7 +201,7 @@ In the consumer VNet, private link services are exposed in the same way as 1st p
 Private Link allows service providers to control their services’ exposure. Access to a Private Link service can be granted to all platform users, restricting to a set of trusted subscriptions, or controlled via Azure RBAC. Also, when an authorized user creates a private endpoint to consume a Private Link service, the service provider must approve the request before traffic from the private endpoint is accepted. Please refer to the [official documentation](https://docs.microsoft.com/en-us/azure/private-link/private-link-service-overview) for additional information. Figure 11 provides an example of a private link service exposed via a private endpoint. 
 
 ![Figure 11 - NOT DISPLAYED](/Figures/figure11.png)
-*Figure 11. Private Link can be used to expose custom services running behind an Azure ILB to other VNets. On the service side, the services to be exposed are represented as “private link services”. On the consumer side, they are represented as “private endpoints”. Clients in the service consumer’s VNet connect to the service using the private endpoint’s address (10.57.1.8 in this example). In the service provider’s VNet, traffic from clients originates from the private link service’s IP address (172.16.4.4 in this example). The platform takes care of the required address translations.*
+*Figure 11. Private Link can be used to expose custom services running behind an Azure ILB to other VNets. On the service side, the services to be exposed are represented as “private link services”. On the consumer side, they are represented as “private endpoints”. Clients in the service consumer’s VNet connect to the service using the private endpoint’s address (10.57.1.8 in this example). In the service provider’s VNet, traffic from clients originates from the private link service’s IP address (172.16.4.4 in this example). The platform takes care of the required network address translations.*
 
 ## Implications of Private Link on network security groups and route tables
 
@@ -212,6 +214,8 @@ There are however two caveats that must be considered. Both will be addressed in
 
 ![Figure 12 - NOT DISPLAYED](/Figures/figure12.png)
 *Figure 12. Effective routes for a NIC attached to a subnet where a private endpoint has been defined. A platform managed /32 route with next hop type = “InterfaceEndpoint” is added to the VNet’s route table.*
+
+> Please note that return traffic from the PaaS service (egresding from the Private Endpoint) will bypass any UDR configred on that subnet. Therefore, even though traffic to the PaaS service can be steered to a Network Virtualised Appliance (NVA) via the use of UDR, the return traffic will go directly to the originating Virtual Machine. This may create a requirement to bypass any TCP-state based security checks on the firewall, for flows destined to Private Endpoints.
 
 ## DNS integration
 
