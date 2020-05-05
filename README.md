@@ -215,7 +215,7 @@ There are however two caveats that must be considered. Both will be addressed in
 ![Figure 12 - NOT DISPLAYED](/Figures/figure12.png)
 *Figure 12. Effective routes for a NIC attached to a subnet where a private endpoint has been defined. A platform managed /32 route with next hop type = “InterfaceEndpoint” is added to the VNet’s route table.*
 
-> Please note that return traffic from the PaaS service (egresding from the Private Endpoint) will bypass any UDR configred on that subnet. Therefore, even though traffic to the PaaS service can be steered to a Network Virtualised Appliance (NVA) via the use of UDR, the return traffic will go directly to the originating Virtual Machine. This may create a requirement to bypass any TCP-state based security checks on the firewall, for flows destined to Private Endpoints.
+> Please note that return traffic from the PaaS service (egressing from the Private Endpoint) will bypass any UDR configred on that subnet. Therefore, even though traffic to the PaaS service can be steered to a Network Virtualised Appliance (NVA) via the use of UDR, the return traffic will go directly to the originating Virtual Machine. This may create a requirement to bypass any TCP-state based security checks on the firewall, for flows destined to Private Endpoints.
 
 ## DNS integration
 
